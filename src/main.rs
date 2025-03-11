@@ -143,7 +143,9 @@ mod tests {
         };
 
         // Spawn a new thread and execute the closure
-        thread::spawn(closure);
+        let handle = thread::spawn(closure);
+        // Wait for thread to complete and capture the results
+        handle.join().unwrap();
 
         // This line would cause a compilation error because `name` has been moved into the closure
         // println!("Hello, {}!", name);
