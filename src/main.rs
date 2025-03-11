@@ -68,4 +68,65 @@ mod tests {
         // Prints a message indicating that the main thread is being joined
         println!("the main thread is being joined");
     }
+
+    /// Function to calculate a counter with a delay
+    fn calculate_counter() -> i32 {
+        let mut counter = 0;
+        // Loop from 0 to 5
+        for i in 0..=5 {
+            // Print the current counter value
+            println!("counter: {}", i);
+            // Pause execution for 1 second
+            thread::sleep(Duration::from_secs(1));
+            // Increment the counter
+            counter += 1;
+        }
+        // Return the final counter value
+        return counter;
+    }
+
+    /// Test function for sequential processing
+    #[test]
+    fn sequential_process() {
+        // Runs calculate_counter sequentially twice
+        let result1 = calculate_counter();
+        let result2 = calculate_counter();
+
+        // Prints the results
+        println!("Total counter 1: {}", result1);
+        println!("Total counter 2: {}", result2);
+        println!("Application finished!");
+
+        // Estimated execution time: 12.05 seconds
+    }
+
+    /// Test function for parallel processing
+    #[test]
+    fn parallel_process() {
+        // Spawns two threads that run calculate_counter concurrently
+        let handle1 = thread::spawn(|| {calculate_counter()});
+        let handle2 = thread::spawn(|| {calculate_counter()});
+
+        // Print waiting message
+        println!("waiting for calculation . . . ");
+
+        // Wait for both threads to complete and capture their results
+        let result1 = handle1.join();
+        let result2 = handle2.join();
+
+        // Match results for both threads
+        match result1 {
+            Ok(result) => println!("the result is {}", result),
+            Err(error) => println!("the result is {:?}", error),
+        }
+        match result2 {
+            Ok(result) => println!("the result is {}", result),
+            Err(error) => println!("the result is {:?}", error),
+        }
+
+        // Print Application finished message
+        println!("Application finished!");
+
+        // Estimated execution time: 6.02 seconds
+    }
 }
