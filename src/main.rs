@@ -82,7 +82,7 @@ mod tests {
             counter += 1;
         }
         // Return the final counter value
-        return counter;
+        counter
     }
 
     /// Test function for sequential processing
@@ -128,5 +128,25 @@ mod tests {
         println!("Application finished!");
 
         // Estimated execution time: 6.02 seconds
+    }
+
+    /// Test function for closure using `move`
+    #[test]
+    fn closure_using_move_test() {
+        // Create a String variable
+        let name = String::from("Gege");
+
+        // Define a closure that moves ownership of `name`
+        let closure = move || {
+            println!("Hello, {}!", name);
+            thread::sleep(Duration::from_secs(2));
+        };
+
+        // Spawn a new thread and execute the closure
+        thread::spawn(closure);
+
+        // This line would cause a compilation error because `name` has been moved into the closure
+        // println!("Hello, {}!", name);
+        // Error: `name` is no longer accessible here due to ownership transfer
     }
 }
