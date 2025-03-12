@@ -249,4 +249,49 @@ mod tests {
         handle2.join().unwrap();
     }
 
+    /// Test function for demonstrating a multi-sender channel using mpsc::channel in Rust
+    #[test]
+    fn channel_multi_sender_test() {
+        // Create a new channel that provides a sender and a receiver for message passing
+        let (sender, receiver) = mpsc::channel();
+        // Clone the original sender to allow multiple threads to send messages through the same channel
+        let sender2 = mpsc::Sender::clone(&sender);
+
+        // Spawn a thread (handle3) that will send messages using the cloned sender (sender2)
+        let handle3 = thread::spawn(move || {
+            // Loop 5 times to send a series of messages
+            for _ in 0..5 {
+                // Pause execution for 1 second to simulate some delay
+                thread::sleep(Duration::from_secs(1));
+                // Send a message from sender2 and immediately unwrap the result to handle potential errors
+                sender2.send("Hello, World! from sender 2".to_string()).unwrap();
+            }
+        });
+
+        // Spawn another thread (handle1) that will send messages using the original sender
+        let handle1 = thread::spawn(move || {
+            // Loop 5 times to send a series of messages
+            for _ in 0..5 {
+                // Pause execution for 2 seconds to simulate a different processing delay
+                thread::sleep(Duration::from_secs(2));
+                // Send a message from sender and immediately unwrap the result to handle potential errors
+                sender.send("Hello, World! from sender 1".to_string()).unwrap();
+            }
+        });
+
+        // Spawn a thread (handle2) that will receive messages from the channel
+        let handle2 = thread::spawn(move || {
+            // Iterate over each message received from the channel until it is closed
+            for value in receiver {
+                // Print each received message
+                println!("The message is {}", value);
+            }
+        });
+
+        // Wait for the sender and receiver threads to finish execution
+        handle1.join().unwrap();
+        handle2.join().unwrap();
+        handle3.join().unwrap();
+    }
+
 }
