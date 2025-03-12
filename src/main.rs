@@ -217,4 +217,36 @@ mod tests {
         handle2.join().unwrap();
     }
 
+    /// Test function for iterating over messages from a channel using its iterator implementation
+    #[test]
+    fn channel_iterator_test() {
+        // Create a new channel for sending and receiving messages
+        let (sender, receiver) = mpsc::channel();
+
+        // Spawn a new thread that will send messages through the channel
+        let handle1 = thread::spawn(move || {
+            // Loop 5 times to send messages repeatedly
+            for _ in 0..5 {
+                // Pause execution for 2 seconds to simulate delay between messages
+                thread::sleep(Duration::from_secs(2));
+                // Send the "Hello, World!" message (converted to String) via the channel and unwrap to handle errors
+                sender.send("Hello, World!".to_string()).unwrap();
+            }
+        });
+
+        // Spawn another thread that will receive messages using the receiver's iterator implementation
+        let handle2 = thread::spawn(move || {
+            // Iterate over each incoming message from the receiver until the channel is closed
+            for value in receiver {
+                // Print the received message
+                println!("The message is {}", value);
+            }
+        });
+
+        // Wait for the sending thread to finish execution
+        handle1.join().unwrap();
+        // Wait for the receiving thread to finish execution
+        handle2.join().unwrap();
+    }
+
 }
