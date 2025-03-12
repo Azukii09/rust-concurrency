@@ -178,4 +178,43 @@ mod tests {
         handle1.join().unwrap();
         handle2.join().unwrap();
     }
+
+    /// Test function for message queuing using a channel
+    #[test]
+    fn channel_queue_test() {
+        // Create a channel for sending and receiving messages
+        let (sender, receiver) = mpsc::channel();
+
+        // Spawn a thread that will send messages to the receiver
+        let handle1 = thread::spawn(move || {
+            // Loop 5 times to send the same message repeatedly
+            for _ in 0..5 {
+                // Pause for 2 seconds between messages
+                thread::sleep(Duration::from_secs(2));
+                // Send the "Hello, World!" message via the channel, converting it to a String
+                sender.send("Hello, World!".to_string()).unwrap();
+            }
+            // After sending messages, send a "done" signal to indicate the end of messages
+            sender.send("done".to_string()).unwrap();
+        });
+
+        // Spawn a thread that will continuously receive messages from the channel
+        let handle2 = thread::spawn(move || {
+            loop {
+                // Block until a message is received; unwrap to handle potential errors
+                let message = receiver.recv().unwrap();
+                // If the received message is "done", break out of the loop to end processing
+                if message == "done" {
+                    break;
+                }
+                // Otherwise, print the received message
+                println!("The message is {}", message);
+            }
+        });
+
+        // Wait for both threads to finish their execution
+        handle1.join().unwrap();
+        handle2.join().unwrap();
+    }
+
 }
