@@ -5,6 +5,7 @@ fn main() {
 /// This module is conditionally compiled only when running tests
 #[cfg(test)]
 mod tests {
+    use std::sync::mpsc;
     // Import necessary modules for threading and sleeping
     use std::thread;
     use std::time::Duration;
@@ -150,5 +151,31 @@ mod tests {
         // This line would cause a compilation error because `name` has been moved into the closure
         // println!("Hello, {}!", name);
         // Error: `name` is no longer accessible here due to ownership transfer
+    }
+
+    /// Test function for message passing between threads
+    #[test]
+    fn channel_test() {
+        // Create a channel for sending and receiving messages
+        let (sender, receiver) = mpsc::channel();
+
+        // Spawn a thread to send a message after a delay
+        let handle1 = thread::spawn(move || {
+            thread::sleep(Duration::from_secs(2));
+            // Send a message to the receiver
+            sender.send("Hello, World!".to_string()).unwrap();
+        });
+
+        // Spawn a thread to receive the message
+        let handle2 = thread::spawn(move || {
+            // Wait for and receive the message
+            let message = receiver.recv().unwrap();
+            // Print the received message
+            println!("The message is {}", message);
+        });
+
+        // Wait for both threads to complete
+        handle1.join().unwrap();
+        handle2.join().unwrap();
     }
 }
