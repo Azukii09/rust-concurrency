@@ -294,21 +294,40 @@ mod tests {
         handle3.join().unwrap();
     }
 
-    static mut COUNTER:i32 =0;
+    /// Test function for demonstrating a race condition
+    ///
+    // Declare a mutable static variable COUNTER with an initial value of 0
+    static mut COUNTER: i32 = 0;
+
     #[test]
     fn race_condition_test() {
+        // Create a vector to store thread handles
         let mut handles = vec![];
+
+        // Spawn 10 threads
         for _ in 0..10 {
             let handle = thread::spawn(|| unsafe {
-                for _ in 0..1000000 {
-                    COUNTER +=1;
+                // Each thread increments the COUNTER variable 1,000,000 times
+                for _ in 0..1_000_000 {
+                    COUNTER += 1;
                 }
             });
+            // Store the thread handle in the vector
             handles.push(handle);
         }
+
+        // Wait for all spawned threads to complete
         for handle in handles {
             handle.join().unwrap();
         }
-        print!("Counter :{}",unsafe { COUNTER });
+
+        // Print the final value of COUNTER
+        println!("Counter: {}", unsafe { COUNTER });
+
+        // **Race Condition Explanation:**
+        // Since multiple threads modify the same shared variable (COUNTER) without synchronization,
+        // it can lead to data races. The final value of COUNTER might not be as expected
+        // because of concurrent read/write operations leading to lost updates.
     }
+
 }
