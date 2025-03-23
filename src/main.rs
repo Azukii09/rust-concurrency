@@ -330,4 +330,25 @@ mod tests {
         // because of concurrent read/write operations leading to lost updates.
     }
 
+    #[test]
+    fn atomic_test() {
+        use std::sync::atomic::{AtomicI32,Ordering};
+
+        static COUNTER_NEW: AtomicI32 = AtomicI32::new(0);
+        let mut handles = vec![];
+        for _ in 0..10 {
+            let handle = thread::spawn(||{
+                for _ in 0..1_000_000 {
+                    COUNTER_NEW.fetch_add(1,Ordering::Relaxed);
+                }
+            });
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        println!("Counter: {}", unsafe { COUNTER_NEW.load(Ordering::Relaxed) });
+    }
 }
