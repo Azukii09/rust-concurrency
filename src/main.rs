@@ -330,25 +330,51 @@ mod tests {
         // because of concurrent read/write operations leading to lost updates.
     }
 
+    /// Test function demonstrating the use of atomic operations to avoid race conditions
     #[test]
     fn atomic_test() {
-        use std::sync::atomic::{AtomicI32,Ordering};
+        // Import AtomicI32 and memory ordering enum from the standard library
+        use std::sync::atomic::{AtomicI32, Ordering};
 
+        // Declare an atomic counter with an initial value of 0.
+        // Using an atomic variable ensures that concurrent modifications are safe.
         static COUNTER_NEW: AtomicI32 = AtomicI32::new(0);
+
+        // Create a vector to store thread handles
         let mut handles = vec![];
+
+        // Spawn 10 threads to increment the atomic counter concurrently
         for _ in 0..10 {
-            let handle = thread::spawn(||{
+            let handle = thread::spawn(|| {
+                // Each thread increments the atomic counter 1,000,000 times
                 for _ in 0..1_000_000 {
-                    COUNTER_NEW.fetch_add(1,Ordering::Relaxed);
+                    // Atomically add 1 to COUNTER_NEW using relaxed memory ordering.
+                    // The relaxed ordering allows the counter to be incremented without additional synchronization,
+                    // which is acceptable in this simple counting scenario.
+                    COUNTER_NEW.fetch_add(1, Ordering::Relaxed);
                 }
             });
+            // Store the thread handle in the vector
             handles.push(handle);
         }
 
+        // Wait for all spawned threads to complete their execution
         for handle in handles {
             handle.join().unwrap();
         }
 
-        println!("Counter: {}", unsafe { COUNTER_NEW.load(Ordering::Relaxed) });
+        // Load and print the final value of the atomic counter using relaxed memory ordering.
+        // The use of atomics here prevents data races, ensuring the correct final count.
+        println!("Counter: {}", { COUNTER_NEW.load(Ordering::Relaxed) });
+
+        // **Explanation:**
+        // This code uses `AtomicI32` to safely share and update a counter across multiple threads.
+        // Atomic types in Rust, such as `AtomicI32`, provide a way to perform lock-free concurrent modifications.
+        // The operations such as `fetch_add` and `load` are guaranteed to be atomic,
+        // meaning that they are performed as a single, indivisible operation.
+        //
+        // For more details, refer to the official Rust documentation on atomics:
+        // https://doc.rust-lang.org/std/sync/atomic/index.html
     }
+
 }
