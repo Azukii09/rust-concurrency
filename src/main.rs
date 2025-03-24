@@ -5,7 +5,7 @@ fn main() {
 /// This module is conditionally compiled only when running tests
 #[cfg(test)]
 mod tests {
-    use std::sync::{mpsc, Arc};
+    use std::sync::mpsc;
     // Import necessary modules for threading and sleeping
     use std::thread;
     use std::time::Duration;
@@ -377,28 +377,57 @@ mod tests {
         // https://doc.rust-lang.org/std/sync/atomic/index.html
     }
 
+    /// Test function demonstrating the use of `Arc<AtomicI32>` to prevent race conditions in a multithreaded context.
     #[test]
     fn atomic_arc_test() {
-        use std::sync::atomic::{AtomicI32, Ordering};
+        // Import necessary atomic types and memory ordering from the Rust standard library
+        use std::sync::{Arc, atomic::{AtomicI32, Ordering}};
 
+        // Create an `Arc<AtomicI32>` instance to allow multiple threads to share and update a single atomic counter
         let counter_new: Arc<AtomicI32> = Arc::new(AtomicI32::new(0));
 
+        // Create a vector to store thread handles
         let mut handles = vec![];
 
+        // Spawn 10 threads, each of which will increment the shared atomic counter
         for _ in 0..10 {
+            // Clone the `Arc` pointer to share ownership of `counter_new` across threads
             let counter_new_clone = Arc::clone(&counter_new);
             let handle = thread::spawn(move || {
+                // Each thread increments the atomic counter 1,000,000 times
                 for _ in 0..1_000_000 {
+                    // Perform an atomic addition to ensure thread-safe updates
                     counter_new_clone.fetch_add(1, Ordering::Relaxed);
                 }
             });
+            // Store the thread handle in the vector
             handles.push(handle);
         }
 
+        // Wait for all threads to complete their execution
         for handle in handles {
             handle.join().unwrap();
         }
 
-        println!("Counter: {}", { counter_new.load(Ordering::Relaxed) });
+        // Load and print the final value of the atomic counter
+        println!("Counter: {}", counter_new.load(Ordering::Relaxed));
+
+        // **Explanation:**
+        // This implementation utilizes `Arc<AtomicI32>` to safely share and modify a counter across multiple threads.
+        // `Arc` (Atomic Reference Counting) allows multiple threads to hold references to the same counter,
+        // while `AtomicI32` ensures that increments are performed atomically, avoiding data races.
+        //
+        // Why use `Arc`?
+        // - Unlike `static mut`, which can lead to race conditions, `Arc` ensures safe shared ownership across threads.
+        // - Since `Arc` itself is thread-safe, it allows multiple threads to modify the counter without needing explicit locks.
+        //
+        // Why use `AtomicI32`?
+        // - Atomic operations like `fetch_add` are lock-free, meaning they avoid the performance overhead of mutex locks.
+        // - This ensures high-performance concurrent updates to the shared counter.
+        //
+        // Reference:
+        // - `Arc`: https://doc.rust-lang.org/std/sync/struct.Arc.html
+        // - `AtomicI32`: https://doc.rust-lang.org/std/sync/atomic/struct.AtomicI32.html
     }
+
 }
