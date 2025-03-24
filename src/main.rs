@@ -5,7 +5,7 @@ fn main() {
 /// This module is conditionally compiled only when running tests
 #[cfg(test)]
 mod tests {
-    use std::sync::mpsc;
+    use std::sync::{mpsc, Arc};
     // Import necessary modules for threading and sleeping
     use std::thread;
     use std::time::Duration;
@@ -377,4 +377,28 @@ mod tests {
         // https://doc.rust-lang.org/std/sync/atomic/index.html
     }
 
+    #[test]
+    fn atomic_arc_test() {
+        use std::sync::atomic::{AtomicI32, Ordering};
+
+        let counter_new: Arc<AtomicI32> = Arc::new(AtomicI32::new(0));
+
+        let mut handles = vec![];
+
+        for _ in 0..10 {
+            let counter_new_clone = Arc::clone(&counter_new);
+            let handle = thread::spawn(move || {
+                for _ in 0..1_000_000 {
+                    counter_new_clone.fetch_add(1, Ordering::Relaxed);
+                }
+            });
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        println!("Counter: {}", { counter_new.load(Ordering::Relaxed) });
+    }
 }
