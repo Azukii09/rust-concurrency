@@ -430,4 +430,27 @@ mod tests {
         // - `AtomicI32`: https://doc.rust-lang.org/std/sync/atomic/struct.AtomicI32.html
     }
 
+    #[test]
+    fn mutex_test() {
+        use std::sync::{Arc, Mutex};
+
+        let counter_new: Arc<Mutex<i32>> = Arc::new(Mutex::new(0));
+
+        let mut handles = vec![];
+
+        for _ in 0..10 {
+            let counter_new_clone = Arc::clone(&counter_new);
+            let handle = thread::spawn(move || {
+                for _ in 0..1_000_000 {
+                    let mut data = counter_new_clone.lock().unwrap();
+                    *data += 1;
+                }
+            });
+            handles.push(handle);
+        }
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        println!("Counter: {}", *counter_new.lock().unwrap());
+    }
 }
