@@ -430,27 +430,55 @@ mod tests {
         // - `AtomicI32`: https://doc.rust-lang.org/std/sync/atomic/struct.AtomicI32.html
     }
 
+    /// Test function demonstrating the use of `Arc<Mutex<i32>>` to avoid race conditions
     #[test]
     fn mutex_test() {
+        // Import necessary synchronization primitives from the standard library
         use std::sync::{Arc, Mutex};
+        use std::thread;
 
+        // Create an atomic reference-counted (Arc) Mutex wrapping an i32 value.
+        // `Arc` allows multiple threads to share ownership of the mutex.
+        // `Mutex` ensures that only one thread can access the counter at a time.
         let counter_new: Arc<Mutex<i32>> = Arc::new(Mutex::new(0));
 
+        // Create a vector to hold the thread handles
         let mut handles = vec![];
 
+        // Spawn 10 threads
         for _ in 0..10 {
+            // Clone the Arc to share ownership of the mutex across threads
             let counter_new_clone = Arc::clone(&counter_new);
             let handle = thread::spawn(move || {
+                // Each thread increments the counter 1,000,000 times
                 for _ in 0..1_000_000 {
+                    // Lock the mutex to get mutable access to the data
+                    // If the lock is poisoned, unwrap will panic
                     let mut data = counter_new_clone.lock().unwrap();
+                    // Increment the counter by 1
                     *data += 1;
+                    // Mutex is automatically unlocked when `data` goes out of scope
                 }
             });
+            // Save the thread handle for later joining
             handles.push(handle);
         }
+
+        // Wait for all threads to complete
         for handle in handles {
             handle.join().unwrap();
         }
+
+        // Lock the mutex one last time to read and print the final counter value
         println!("Counter: {}", *counter_new.lock().unwrap());
+
+        // **Explanation:**
+        // This code uses `Arc<Mutex<i32>>` to allow multiple threads to safely update a shared counter.
+        // The `Mutex` ensures that only one thread at a time can modify the counter, thus preventing race conditions.
+        // `Arc` (Atomic Reference Counting) is used to share the mutex safely across threads.
+        //
+        // For more details, refer to the official Rust documentation on Mutex:
+        // https://doc.rust-lang.org/std/sync/struct.Mutex.html
     }
+
 }
